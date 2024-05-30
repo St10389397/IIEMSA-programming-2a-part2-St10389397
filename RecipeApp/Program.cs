@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Xml;
 
@@ -9,15 +8,10 @@ class Program
 {
     static List<Recipe> recipes = new List<Recipe>();
     const string recipeFilePath = "recipes.xml";
-
-    // Delegate for notifying when calories exceed 300
-    delegate void CalorieNotification(string message);
-    static event CalorieNotification NotifyCalorieExcess;
+    static Recipe[] recipeArray; // Array to store recipes
 
     static void Main(string[] args)
     {
-        NotifyCalorieExcess += DisplayCalorieWarning;
-
         LoadRecipes();
 
         Console.WriteLine("\u001b[32mWelcome to Recipe Manager!\u001b[0m");
@@ -29,8 +23,7 @@ class Program
             Console.WriteLine("\u001b[36m2. View recorded recipes\u001b[0m");
             Console.WriteLine("\u001b[35m3. Scale a recipe\u001b[0m");
             Console.WriteLine("\u001b[34m4. Reset recipe scale\u001b[0m");
-            Console.WriteLine("\u001b[31m5. Reset all recipes\u001b[0m");
-            Console.WriteLine("\u001b[31m6. Exit\u001b[0m");
+            Console.WriteLine("\u001b[31m5. Exit\u001b[0m");
             Console.Write("\u001b[35mEnter your choice: \u001b[0m");
             int choice = Convert.ToInt32(Console.ReadLine());
 
@@ -49,9 +42,6 @@ class Program
                     ResetRecipeScale();
                     break;
                 case 5:
-                    ResetAllRecipes();
-                    break;
-                case 6:
                     SaveRecipes();
                     Console.WriteLine("\u001b[31mExiting...\u001b[0m");
                     return;
@@ -65,11 +55,6 @@ class Program
     static void AddRecipe()
     {
         Recipe currentRecipe = new Recipe();
-
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.Write("Enter the recipe name: ");
-        Console.ResetColor();
-        currentRecipe.Name = Console.ReadLine();
 
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.Write("Enter the number of ingredients: ");
@@ -88,11 +73,7 @@ class Program
             double quantity = Convert.ToDouble(Console.ReadLine());
             Console.Write("Unit: ");
             string unit = Console.ReadLine();
-            Console.Write("Calories: ");
-            int calories = Convert.ToInt32(Console.ReadLine());
-            Console.Write("Food Group: ");
-            string foodGroup = Console.ReadLine();
-            currentRecipe.AddIngredient(name, quantity, unit, calories, foodGroup);
+            currentRecipe.AddIngredient(name, quantity, unit);
         }
 
         Console.ForegroundColor = ConsoleColor.Yellow;
@@ -111,18 +92,23 @@ class Program
             currentRecipe.AddStep(step);
         }
 
-        // Calculate total calories and check if they exceed 300
-        currentRecipe.CalculateTotalCalories();
-        if (currentRecipe.TotalCalories > 300)
-        {
-            NotifyCalorieExcess?.Invoke($"Warning: The total calories for {currentRecipe.Name} exceed 300!");
-        }
-
-        // Add the new recipe to the list
+        // Add the new recipe to the list and array
         recipes.Add(currentRecipe);
+        AddRecipeToArray(currentRecipe); // Adding to the array
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("Recipe added successfully!");
         Console.ResetColor();
+    }
+
+    static void AddRecipeToArray(Recipe recipe)
+    {
+        if (recipeArray == null)
+            recipeArray = new Recipe[] { recipe };
+        else
+        {
+            Array.Resize(ref recipeArray, recipeArray.Length + 1);
+            recipeArray[recipeArray.Length - 1] = recipe;
+        }
     }
 
     static void ViewRecipes()
@@ -135,31 +121,16 @@ class Program
             return;
         }
 
-        // Sort recipes by name alphabetically
-        var sortedRecipes = recipes.OrderBy(r => r.Name).ToList();
-
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("\nRecorded Recipes:");
         Console.ResetColor();
-        for (int i = 0; i < sortedRecipes.Count; i++)
+        for (int i = 0; i < recipes.Count; i++)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"Recipe {i + 1}: {sortedRecipes[i].Name}");
+            Console.WriteLine($"Recipe {i + 1}:");
             Console.ResetColor();
+            Console.WriteLine(recipes[i]);
         }
-
-        Console.Write("\nEnter the index of the recipe you want to view: ");
-        int index = Convert.ToInt32(Console.ReadLine()) - 1;
-
-        if (index < 0 || index >= sortedRecipes.Count)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Invalid recipe index.");
-            Console.ResetColor();
-            return;
-        }
-
-        Console.WriteLine(sortedRecipes[index]);
     }
 
     static void ScaleRecipe()
@@ -175,7 +146,7 @@ class Program
         Console.WriteLine("Enter the index of the recipe you want to scale:");
         for (int i = 0; i < recipes.Count; i++)
         {
-            Console.WriteLine($"{i + 1}. {recipes[i].Name}");
+            Console.WriteLine($"{i + 1}. {recipes[i]}");
         }
 
         Console.Write("Enter the index: ");
@@ -192,11 +163,6 @@ class Program
         Console.Write("Enter the scaling factor (0.5 for half, 2 for double, 3 for triple): ");
         double factor = Convert.ToDouble(Console.ReadLine());
         recipes[index].ScaleRecipe(factor);
-        recipes[index].CalculateTotalCalories();
-        if (recipes[index].TotalCalories > 300)
-        {
-            NotifyCalorieExcess?.Invoke($"Warning: The total calories for {recipes[index].Name} exceed 300 after scaling!");
-        }
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("Recipe scaled successfully!");
         Console.ResetColor();
@@ -215,7 +181,7 @@ class Program
         Console.WriteLine("Enter the index of the recipe you want to reset:");
         for (int i = 0; i < recipes.Count; i++)
         {
-            Console.WriteLine($"{i + 1}. {recipes[i].Name}");
+            Console.WriteLine($"{i + 1}. {recipes[i]}");
         }
 
         Console.Write("Enter the index: ");
@@ -230,41 +196,9 @@ class Program
         }
 
         recipes[index].ResetQuantities();
-        recipes[index].CalculateTotalCalories();
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("Recipe reset successfully!");
         Console.ResetColor();
-    }
-
-    static void ResetAllRecipes()
-    {
-        if (recipes.Count == 0)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("No recipes recorded yet.");
-            Console.ResetColor();
-            return;
-        }
-
-        Console.Write("Are you sure you want to reset all recipes? (yes/no): ");
-        string response = Console.ReadLine().ToLower();
-        if (response == "yes" || response == "y")
-        {
-            foreach (var recipe in recipes)
-            {
-                recipe.ResetQuantities();
-                recipe.CalculateTotalCalories();
-            }
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("All recipes have been reset successfully!");
-            Console.ResetColor();
-        }
-        else
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("Reset all recipes operation cancelled.");
-            Console.ResetColor();
-        }
     }
 
     static void SaveRecipes()
@@ -311,16 +245,9 @@ class Program
             }
         }
     }
-
-    static void DisplayCalorieWarning(string message)
-    {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(message);
-        Console.ResetColor();
-    }
 }
 
-[DataContract]
+[DataContract] // Attribute to allow serialization
 class Ingredient
 {
     [DataMember]
@@ -329,40 +256,31 @@ class Ingredient
     public double Quantity { get; set; }
     [DataMember]
     public string Unit { get; set; }
-    [DataMember]
-    public double OriginalQuantity { get; set; }
-    [DataMember]
-    public int Calories { get; set; }
-    [DataMember]
-    public string FoodGroup { get; set; }
 
-    public Ingredient(string name, double quantity, string unit, int calories, string foodGroup)
+    // Adding a property to store the original quantity
+    public double OriginalQuantity { get; set; }
+
+    public Ingredient(string name, double quantity, string unit)
     {
         Name = name;
         Quantity = quantity;
         Unit = unit;
-        OriginalQuantity = quantity;
-        Calories = calories;
-        FoodGroup = foodGroup;
+        OriginalQuantity = quantity; // Store the original quantity
     }
 
     public override string ToString()
     {
-        return $"{Quantity} {Unit} of {Name} ({Calories} calories, {FoodGroup})";
+        return $"{Quantity} {Unit} of {Name}";
     }
 }
 
-[DataContract]
+[DataContract] // Attribute to allow serialization
 class Recipe
 {
-    [DataMember]
-    public string Name { get; set; }
     [DataMember]
     public List<Ingredient> Ingredients { get; set; }
     [DataMember]
     public List<string> Steps { get; set; }
-    [DataMember]
-    public int TotalCalories { get; private set; }
 
     public Recipe()
     {
@@ -370,9 +288,9 @@ class Recipe
         Steps = new List<string>();
     }
 
-    public void AddIngredient(string name, double quantity, string unit, int calories, string foodGroup)
+    public void AddIngredient(string name, double quantity, string unit)
     {
-        Ingredients.Add(new Ingredient(name, quantity, unit, calories, foodGroup));
+        Ingredients.Add(new Ingredient(name, quantity, unit));
     }
 
     public void AddStep(string step)
@@ -384,33 +302,34 @@ class Recipe
     {
         foreach (var ingredient in Ingredients)
         {
+            // Scale the quantity
             ingredient.Quantity = ingredient.OriginalQuantity * factor;
         }
-        CalculateTotalCalories();
     }
 
     public void ResetQuantities()
     {
+        // Reset quantities to their original values
         foreach (var ingredient in Ingredients)
         {
             ingredient.Quantity = ingredient.OriginalQuantity;
         }
-        CalculateTotalCalories();
     }
 
-    public void CalculateTotalCalories()
+    public void ClearRecipe()
     {
-        TotalCalories = Ingredients.Sum(ingredient => ingredient.Calories);
+        Ingredients.Clear();
+        Steps.Clear();
     }
 
     public override string ToString()
     {
-        string recipeDetails = $"Name: {Name}\nIngredients:\n";
+        string recipeDetails = "Ingredients:\n";
         foreach (var ingredient in Ingredients)
         {
             recipeDetails += $"{ingredient}\n";
         }
-        recipeDetails += $"\nTotal Calories: {TotalCalories}\nSteps:\n";
+        recipeDetails += "\nSteps:\n";
         for (int i = 0; i < Steps.Count; i++)
         {
             recipeDetails += $"{i + 1}. {Steps[i]}\n";
