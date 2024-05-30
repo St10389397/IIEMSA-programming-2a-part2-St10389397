@@ -7,21 +7,29 @@ using System.Xml;
 
 class Program
 {
+    // List to store all recipes
     static List<Recipe> recipes = new List<Recipe>();
+
+    // Path to the XML file to save/load recipes
     const string recipeFilePath = "recipes.xml";
 
     // Delegate for notifying when calories exceed 300
     delegate void CalorieNotification(string message);
+
+    // Event triggered when total calories exceed 300
     static event CalorieNotification NotifyCalorieExcess;
 
     static void Main(string[] args)
     {
+        // Subscribe to the calorie excess notification event
         NotifyCalorieExcess += DisplayCalorieWarning;
 
+        // Load recipes from the file
         LoadRecipes();
 
         Console.WriteLine("\u001b[32mWelcome to Recipe Manager!\u001b[0m");
 
+        // Main menu loop
         while (true)
         {
             Console.WriteLine("\nMenu:");
@@ -34,6 +42,7 @@ class Program
             Console.Write("\u001b[35mEnter your choice: \u001b[0m");
             int choice = Convert.ToInt32(Console.ReadLine());
 
+            // Execute the chosen menu option
             switch (choice)
             {
                 case 1:
@@ -62,6 +71,7 @@ class Program
         }
     }
 
+    // Method to add a new recipe
     static void AddRecipe()
     {
         Recipe currentRecipe = new Recipe();
@@ -128,6 +138,7 @@ class Program
         SaveRecipes();
     }
 
+    // Method to view all recorded recipes
     static void ViewRecipes()
     {
         if (recipes.Count == 0)
@@ -165,6 +176,7 @@ class Program
         Console.WriteLine(sortedRecipes[index]);
     }
 
+    // Method to scale a recipe
     static void ScaleRecipe()
     {
         if (recipes.Count == 0)
@@ -208,6 +220,7 @@ class Program
         SaveRecipes();
     }
 
+    // Method to reset a recipe's scale
     static void ResetRecipeScale()
     {
         if (recipes.Count == 0)
@@ -227,7 +240,6 @@ class Program
         Console.Write("Enter the index: ");
         int index = Convert.ToInt32(Console.ReadLine()) - 1;
 
-
         if (index < 0 || index >= recipes.Count)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -246,6 +258,7 @@ class Program
         SaveRecipes();
     }
 
+    // Method to reset all recipes' scales
     static void ResetAllRecipes()
     {
         if (recipes.Count == 0)
@@ -280,18 +293,19 @@ class Program
         }
     }
 
+    // Method to save recipes to an XML file
     static void SaveRecipes()
     {
         try
         {
-            using (FileStream fs = new FileStream(recipeFilePath, FileMode.Create))
+            DataContractSerializer serializer = new DataContractSerializer(typeof(List<Recipe>));
+            using (FileStream stream = new FileStream(recipeFilePath, FileMode.Create))
             {
-                var serializer = new DataContractSerializer(typeof(List<Recipe>));
-                serializer.WriteObject(fs, recipes);
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("Recipes saved successfully!");
-                Console.ResetColor();
+                serializer.WriteObject(stream, recipes);
             }
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Recipes saved successfully!");
+            Console.ResetColor();
         }
         catch (Exception ex)
         {
@@ -301,30 +315,29 @@ class Program
         }
     }
 
+    // Method to load recipes from an XML file
     static void LoadRecipes()
     {
-        if (File.Exists(recipeFilePath))
+        try
         {
-            try
+            if (File.Exists(recipeFilePath))
             {
-                using (FileStream fs = new FileStream(recipeFilePath, FileMode.Open))
+                DataContractSerializer serializer = new DataContractSerializer(typeof(List<Recipe>));
+                using (FileStream stream = new FileStream(recipeFilePath, FileMode.Open))
                 {
-                    var serializer = new DataContractSerializer(typeof(List<Recipe>));
-                    recipes = (List<Recipe>)serializer.ReadObject(fs);
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine("Recipes loaded successfully!");
-                    Console.ResetColor();
+                    recipes = (List<Recipe>)serializer.ReadObject(stream);
                 }
             }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Error loading recipes: {ex.Message}");
-                Console.ResetColor();
-            }
+        }
+        catch (Exception ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Error loading recipes: {ex.Message}");
+            Console.ResetColor();
         }
     }
 
+    // Method to display a calorie warning message
     static void DisplayCalorieWarning(string message)
     {
         Console.ForegroundColor = ConsoleColor.Red;
@@ -333,48 +346,20 @@ class Program
     }
 }
 
-[DataContract]
-class Ingredient
-{
-    [DataMember]
-    public string Name { get; set; }
-    [DataMember]
-    public double Quantity { get; set; }
-    [DataMember]
-    public string Unit { get; set; }
-    [DataMember]
-    public double OriginalQuantity { get; set; }
-    [DataMember]
-    public int Calories { get; set; }
-    [DataMember]
-    public string FoodGroup { get; set; }
-
-    public Ingredient(string name, double quantity, string unit, int calories, string foodGroup)
-    {
-        Name = name;
-        Quantity = quantity;
-        Unit = unit;
-        OriginalQuantity = quantity;
-        Calories = calories;
-        FoodGroup = foodGroup;
-    }
-
-    public override string ToString()
-    {
-        return $"{Quantity} {Unit} of {Name} ({Calories} calories, {FoodGroup})";
-    }
-}
-
+// Recipe class
 [DataContract]
 class Recipe
 {
     [DataMember]
     public string Name { get; set; }
+
     [DataMember]
     public List<Ingredient> Ingredients { get; set; }
+
     [DataMember]
     public List<string> Steps { get; set; }
-    [DataMember]
+
+    public double ScalingFactor { get; private set; } = 1.0;
     public int TotalCalories { get; private set; }
 
     public Recipe()
@@ -397,18 +382,18 @@ class Recipe
     {
         foreach (var ingredient in Ingredients)
         {
-            ingredient.Quantity = ingredient.OriginalQuantity * factor;
+            ingredient.Quantity *= factor;
         }
-        CalculateTotalCalories();
+        ScalingFactor *= factor;
     }
 
     public void ResetQuantities()
     {
         foreach (var ingredient in Ingredients)
         {
-            ingredient.Quantity = ingredient.OriginalQuantity;
+            ingredient.Quantity /= ScalingFactor;
         }
-        CalculateTotalCalories();
+        ScalingFactor = 1.0;
     }
 
     public void CalculateTotalCalories()
@@ -418,16 +403,47 @@ class Recipe
 
     public override string ToString()
     {
-        string recipeDetails = $"Name: {Name}\nIngredients:\n";
+        string recipeDetails = $"Recipe Name: {Name}\n";
+        recipeDetails += "Ingredients:\n";
         foreach (var ingredient in Ingredients)
         {
-            recipeDetails += $"{ingredient}\n";
+            recipeDetails += $"- {ingredient.Name}: {ingredient.Quantity} {ingredient.Unit} ({ingredient.Calories} calories)\n";
         }
-        recipeDetails += $"\nTotal Calories: {TotalCalories}\nSteps:\n";
+        recipeDetails += "Steps:\n";
         for (int i = 0; i < Steps.Count; i++)
         {
             recipeDetails += $"{i + 1}. {Steps[i]}\n";
         }
+        recipeDetails += $"Total Calories: {TotalCalories}\n";
         return recipeDetails;
+    }
+}
+
+// Ingredient class
+[DataContract]
+class Ingredient
+{
+    [DataMember]
+    public string Name { get; set; }
+
+    [DataMember]
+    public double Quantity { get; set; }
+
+    [DataMember]
+    public string Unit { get; set; }
+
+    [DataMember]
+    public int Calories { get; set; }
+
+    [DataMember]
+    public string FoodGroup { get; set; }
+
+    public Ingredient(string name, double quantity, string unit, int calories, string foodGroup)
+    {
+        Name = name;
+        Quantity = quantity;
+        Unit = unit;
+        Calories = calories;
+        FoodGroup = foodGroup;
     }
 }
