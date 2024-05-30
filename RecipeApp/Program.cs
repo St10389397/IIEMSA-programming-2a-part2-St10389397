@@ -337,7 +337,7 @@ class Program
         }
     }
 
-    // Method to display a calorie warning message
+    // Method to display a calorie warning 
     static void DisplayCalorieWarning(string message)
     {
         Console.ForegroundColor = ConsoleColor.Red;
