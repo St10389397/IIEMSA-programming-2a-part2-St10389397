@@ -128,87 +128,6 @@ class Program
         SaveRecipes();
     }
 
-    static void ScaleRecipe()
-    {
-        if (recipes.Count == 0)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("No recipes available to scale.");
-            Console.ResetColor();
-            return;
-        }
-
-        Console.WriteLine("Enter the index of the recipe you want to scale:");
-        for (int i = 0; i < recipes.Count; i++)
-        {
-            Console.WriteLine($"{i + 1}. {recipes[i].Name}");
-        }
-
-        Console.Write("Enter the index: ");
-        int index = Convert.ToInt32(Console.ReadLine()) - 1;
-
-        if (index < 0 || index >= recipes.Count)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Invalid recipe index.");
-            Console.ResetColor();
-            return;
-        }
-
-        Console.Write("Enter the scaling factor (0.5 for half, 2 for double, 3 for triple): ");
-        double factor = Convert.ToDouble(Console.ReadLine());
-        recipes[index].ScaleRecipe(factor);
-        recipes[index].CalculateTotalCalories();
-        if (recipes[index].TotalCalories > 300)
-        {
-            NotifyCalorieExcess?.Invoke($"Warning: The total calories for {recipes[index].Name} exceed 300 after scaling!");
-        }
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("Recipe scaled successfully!");
-        Console.ResetColor();
-
-        // Save recipes immediately after scaling
-        SaveRecipes();
-    }
-
-    static void ResetRecipeScale()
-    {
-        if (recipes.Count == 0)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("No recipes available to reset.");
-            Console.ResetColor();
-            return;
-        }
-
-        Console.WriteLine("Enter the index of the recipe you want to reset:");
-        for (int i = 0; i < recipes.Count; i++)
-        {
-            Console.WriteLine($"{i + 1}. {recipes[i].Name}");
-        }
-
-        Console.Write("Enter the index: ");
-        int index = Convert.ToInt32(Console.ReadLine()) - 1;
-
-        if (index < 0 || index >= recipes.Count)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Invalid recipe index.");
-            Console.ResetColor();
-            return;
-        }
-
-        recipes[index].ResetQuantities();
-        recipes[index].CalculateTotalCalories();
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("Recipe reset successfully!");
-        Console.ResetColor();
-
-        // Save recipes immediately after resetting scale
-        SaveRecipes();
-    }
-
-
     static void ViewRecipes()
     {
         if (recipes.Count == 0)
@@ -284,6 +203,9 @@ class Program
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("Recipe scaled successfully!");
         Console.ResetColor();
+
+        // Save recipes immediately after scaling
+        SaveRecipes();
     }
 
     static void ResetRecipeScale()
@@ -305,8 +227,8 @@ class Program
         Console.Write("Enter the index: ");
         int index = Convert.ToInt32(Console.ReadLine()) - 1;
 
-        if (index < 0 || index >= recipes
-.Count)
+
+        if (index < 0 || index >= recipes.Count)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Invalid recipe index.");
@@ -319,6 +241,9 @@ class Program
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("Recipe reset successfully!");
         Console.ResetColor();
+
+        // Save recipes immediately after resetting
+        SaveRecipes();
     }
 
     static void ResetAllRecipes()
@@ -343,6 +268,9 @@ class Program
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("All recipes have been reset successfully!");
             Console.ResetColor();
+
+            // Save recipes immediately after resetting all
+            SaveRecipes();
         }
         else
         {
