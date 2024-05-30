@@ -1,0 +1,11 @@
+Changes made from part 1
+The Recipe Manager application has been improved based on feedback, and now includes two important reset options. The first option is the "Reset Recipe Scale," which allows users to reset the ingredient quantities of an individual recipe back to their original measurements, reversing any changes made to the scaling. This is beneficial for users who want to experiment with different serving sizes but need a simple way to go back to the default settings.
+The second option is the "Reset All Recipes," which has been newly added. This comprehensive reset function returns all recipes in the application to their original states, reversing any modifications, scaling adjustments, or custom changes made. This ensures that users can swiftly restore their entire recipe collection to its default configuration, providing a clean slate for new adjustments or planning.
+
+
+Instructions
+Start by moving to the "Part 2" folder on your system, then start running a program called Recipes App inside Visual Studio. Find the "repos" directory in the "Part 2" folder and open it. You will see a Visual Studio solution called "Recipe App" in the repos' folder. Double click on this solution in Visual Studio to open it. Verify the toolbar at the top of the window when loading a solution in Visual Studio to select an appropriate start project.  The Recipe App project should be set as the starting project. To start the application, click on the toolbar with the green "Play" button, which is usually located at the top center or top left of the Visual Studio debugging window. You will see the "Welcome to Recipe Manager!" message in a console window. To interact with a program that may include adding a new recipe, viewing a recorded recipe, scaling a recipe, or exiting a recipe, adding the calories to a recipe, resetting the inputted values, etc. follow the prompts in the console window.  Please input the necessary information as soon as possible. Choose an appropriate option from the menu or close the console window if you want to quit your program. You can successfully run and interact with the "Recipe App" program in Visual Studio by following these instructions.
+
+
+
+https://github.com/St10389397/IIEMSA-programming-2a-part2-St10389397/tree/master 
