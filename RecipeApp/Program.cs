@@ -221,7 +221,8 @@ class Program
         Console.Write("Enter the index: ");
         int index = Convert.ToInt32(Console.ReadLine()) - 1;
 
-        if (index < 0 || index >= recipes.Count)
+        if (index < 0 || index >= recipes
+.Count)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("Invalid recipe index.");
